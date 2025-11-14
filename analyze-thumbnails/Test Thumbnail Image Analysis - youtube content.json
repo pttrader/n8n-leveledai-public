@@ -1,0 +1,282 @@
+{
+  "name": "Test Thumbnail Image Analysis - youtube content",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -32
+      ],
+      "id": "3cfcf61f-b859-473a-a4d5-4879d3b5b4a6",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b7bbb3ab-579a-4d1b-bc69-fa08dfdc2630",
+              "name": "thumbnail_url",
+              "value": "https://i3.ytimg.com/vi/fTpWTUW2Wco/maxresdefault.jpg",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        -32
+      ],
+      "id": "9e8229e3-dd2b-4611-b747-5bcab102c94a",
+      "name": "Set Thumbnail URL Variable"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: The HTTP Request node's output\nconst response = $input.first().json;\n\n// Extract the content string from choices[0].message.content\nconst contentString = response.choices[0].message.content;\n\n// Parse the content string into a JSON object\nconst parsedContent = JSON.parse(contentString);\n\n// Return the parsed JSON object as a new item\nreturn [{ json: parsedContent }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -32
+      ],
+      "id": "e2fb463e-37aa-4e8f-b72f-76fb1d526a47",
+      "name": "Parse response from ai into good JSON"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5-mini\",\n  \"response_format\": {\n    \"type\": \"json_schema\",\n    \"json_schema\": {\n      \"name\": \"thumbnail_analysis\",\n      \"strict\": true,\n      \"schema\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"text\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"full_text\": { \"type\": [\"string\", \"null\"] },\n              \"highlighted_words\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"additionalProperties\": false,\n                  \"properties\": {\n                    \"word\": { \"type\": \"string\" },\n                    \"fg_color\": { \"type\": [\"string\", \"null\"] },\n                    \"bg_color\": { \"type\": [\"string\", \"null\"] },\n                    \"outline\": { \"type\": [\"boolean\", \"null\"] },\n                    \"box\": { \"type\": [\"array\", \"null\"], \"items\": { \"type\": \"number\" }, \"minItems\": 4, \"maxItems\": 4 }\n                  },\n                  \"required\": [\"word\", \"fg_color\", \"bg_color\", \"outline\", \"box\"]\n                }\n              },\n              \"text_coverage_pct\": { \"type\": [\"number\", \"null\"] }\n            },\n            \"required\": [\"full_text\", \"highlighted_words\", \"text_coverage_pct\"]\n          },\n          \"people\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"additionalProperties\": false,\n              \"properties\": {\n                \"action\": { \"type\": [\"string\", \"null\"] },\n                \"expression\": { \"type\": [\"string\", \"null\"] },\n                \"hand_gestures\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n                \"box\": { \"type\": [\"array\", \"null\"], \"items\": { \"type\": \"number\" }, \"minItems\": 4, \"maxItems\": 4 },\n                \"confidence\": { \"type\": [\"number\", \"null\"] }\n              },\n              \"required\": [\"action\", \"expression\", \"hand_gestures\", \"box\", \"confidence\"]\n            }\n          },\n          \"icons_logos\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"additionalProperties\": false,\n              \"properties\": {\n                \"type\": { \"type\": [\"string\", \"null\"] },\n                \"label\": { \"type\": [\"string\", \"null\"] },\n                \"box\": { \"type\": [\"array\", \"null\"], \"items\": { \"type\": \"number\" }, \"minItems\": 4, \"maxItems\": 4 },\n                \"confidence\": { \"type\": [\"number\", \"null\"] }\n              },\n              \"required\": [\"type\", \"label\", \"box\", \"confidence\"]\n            }\n          },\n          \"background\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"description\": { \"type\": [\"string\", \"null\"] },\n              \"clutter_level\": { \"type\": [\"string\", \"null\"] }\n            },\n            \"required\": [\"description\", \"clutter_level\"]\n          },\n          \"colors\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"dominant\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"additionalProperties\": false,\n                  \"properties\": {\n                    \"hex\": { \"type\": \"string\" },\n                    \"pct\": { \"type\": \"number\" }\n                  },\n                  \"required\": [\"hex\", \"pct\"]\n                },\n                \"maxItems\": 3\n              }\n            },\n            \"required\": [\"dominant\"]\n          },\n          \"composition\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"focal_point\": { \"type\": [\"string\", \"null\"] }\n            },\n            \"required\": [\"focal_point\"]\n          },\n          \"effects\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"text_outline\": { \"type\": [\"boolean\", \"null\"] },\n              \"glow\": { \"type\": [\"boolean\", \"null\"] }\n            },\n            \"required\": [\"text_outline\", \"glow\"]\n          },\n          \"emotional_appeal\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n              \"emotion\": { \"type\": [\"string\", \"null\"] },\n              \"score\": { \"type\": [\"number\", \"null\"] }\n            },\n            \"required\": [\"emotion\", \"score\"]\n          },\n          \"summary\": {\n            \"type\": \"string\",\n            \"description\": \"A concise summary (≤25 words) of the thumbnail's key points, highlighting elements that drive click-through rates and reflect popular trends, including why words are highlighted.\"\n          }\n        },\n        \"required\": [\"text\", \"people\", \"icons_logos\", \"background\", \"colors\", \"composition\", \"effects\", \"emotional_appeal\", \"summary\"]\n      }\n    }\n  },\n  \"max_completion_tokens\": 10000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a visual-analysis assistant for YouTube thumbnails. Return valid JSON only, matching the provided schema, with no extra text. Analyze the image strictly based on its pixels, ignoring off-video metadata. Identify text (full text, highlighted words with colors), people (actions, expressions, gestures), icons/logos, background, dominant colors (top 3), focal point, effects (text outline, glow), emotional appeal, and a concise summary (≤25 words) of key points driving click-through rates and reflecting trends. For highlighted words, note their emotional impact, brevity, and relevance in the summary. Use normalized bounding boxes [x, y, w, h] (0–1, origin top-left) for positions. Provide confidence scores (0–1) for detections. Use null or empty arrays for absent or uncertain elements.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"{{ $json.thumbnail_url }}\",\n            \"detail\": \"auto\"\n          }\n        },\n        {\n          \"type\": \"text\",\n          \"text\": \"Analyze this YouTube thumbnail and output JSON matching the provided schema. Detect:\\n- Text (full text, highlighted words with colors/outlines, coverage)\\n- People (actions, facial expressions, hand gestures, bounding boxes)\\n- Icons/logos (type, label, boxes)\\n- Background (description, clutter)\\n- Colors (top 3 hex with percentages)\\n- Composition (main focal point)\\n- Effects (text outline, glow)\\n- Emotional appeal (emotion type, score 0–1 for click-through potential)\\n- Summary (≤25 words) of key points driving click-through rates and trends, including why words are highlighted (emotional impact, brevity, relevance)\\nUse null or empty arrays for missing elements. Return only the JSON object, no extra text.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "4af7322a-47f6-4463-a7b1-f1b029fea428",
+      "name": "Open AI gpt-5-mini image analysis",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "xfUW30X2ADmZNWAW",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Set Thumbnail URL Variable": [
+      {
+        "json": {
+          "thumbnail_url": "https://i3.ytimg.com/vi/fTpWTUW2Wco/maxresdefault.jpg"
+        }
+      }
+    ],
+    "Parse response from ai into good JSON": [
+      {
+        "json": {
+          "text": {
+            "full_text": "THIS IS THE ONLY THING THAT MATTERS NOW\nQ&A/FIRESIDE CHAT",
+            "highlighted_words": [
+              {
+                "word": "ONLY THING",
+                "fg_color": "#000000",
+                "bg_color": "#FFD400",
+                "outline": false,
+                "box": [
+                  0.075,
+                  0.3,
+                  0.52,
+                  0.2
+                ]
+              },
+              {
+                "word": "Q&A/FIRESIDE CHAT",
+                "fg_color": "#000000",
+                "bg_color": "#F6E28A",
+                "outline": false,
+                "box": [
+                  0.02,
+                  0.88,
+                  0.36,
+                  0.1
+                ]
+              }
+            ],
+            "text_coverage_pct": 0.2
+          },
+          "people": [
+            {
+              "action": "speaking / addressing camera",
+              "expression": "serious / attentive (slightly surprised)",
+              "hand_gestures": [
+                "partial hand visible (gesturing)"
+              ],
+              "box": [
+                0.53,
+                0.03,
+                0.44,
+                0.94
+              ],
+              "confidence": 0.98
+            }
+          ],
+          "icons_logos": [
+            {
+              "type": "logo",
+              "label": "NY cap logo",
+              "box": [
+                0.78,
+                0.02,
+                0.12,
+                0.12
+              ],
+              "confidence": 0.8
+            }
+          ],
+          "background": {
+            "description": "Left black panel with yellow border and bold text; subtle vignette/white fade around subject on right",
+            "clutter_level": "low"
+          },
+          "colors": {
+            "dominant": [
+              {
+                "hex": "#000000",
+                "pct": 0.45
+              },
+              {
+                "hex": "#FFFFFF",
+                "pct": 0.35
+              },
+              {
+                "hex": "#FFD400",
+                "pct": 0.2
+              }
+            ]
+          },
+          "composition": {
+            "focal_point": "Close-up face on right and bold yellow \"ONLY THING\" text on left"
+          },
+          "effects": {
+            "text_outline": true,
+            "glow": true
+          },
+          "emotional_appeal": {
+            "emotion": "urgency/curiosity",
+            "score": 0.92
+          },
+          "summary": "Close-up face plus bold yellow 'ONLY THING' creates urgency and curiosity; brief highlighted phrase signals essential advice; Q&A tag adds credibility."
+        }
+      }
+    ],
+    "Open AI gpt-5-mini image analysis": [
+      {
+        "json": {
+          "id": "chatcmpl-CMefuRq9uB79Kgqo6VPj4m8QzONpD",
+          "object": "chat.completion",
+          "created": 1759515606,
+          "model": "gpt-5-mini-2025-08-07",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "{\n  \"text\": {\n    \"full_text\": \"THIS IS THE ONLY THING THAT MATTERS NOW\\nQ&A/FIRESIDE CHAT\",\n    \"highlighted_words\": [\n      {\n        \"word\": \"ONLY THING\",\n        \"fg_color\": \"#000000\",\n        \"bg_color\": \"#FFD400\",\n        \"outline\": false,\n        \"box\": [\n          0.075,\n          0.30,\n          0.52,\n          0.20\n        ]\n      },\n      {\n        \"word\": \"Q&A/FIRESIDE CHAT\",\n        \"fg_color\": \"#000000\",\n        \"bg_color\": \"#F6E28A\",\n        \"outline\": false,\n        \"box\": [\n          0.02,\n          0.88,\n          0.36,\n          0.10\n        ]\n      }\n    ],\n    \"text_coverage_pct\": 0.20\n  },\n  \"people\": [\n    {\n      \"action\": \"speaking / addressing camera\",\n      \"expression\": \"serious / attentive (slightly surprised)\",\n      \"hand_gestures\": [\n        \"partial hand visible (gesturing)\"\n      ],\n      \"box\": [\n        0.53,\n        0.03,\n        0.44,\n        0.94\n      ],\n      \"confidence\": 0.98\n    }\n  ],\n  \"icons_logos\": [\n    {\n      \"type\": \"logo\",\n      \"label\": \"NY cap logo\",\n      \"box\": [\n        0.78,\n        0.02,\n        0.12,\n        0.12\n      ],\n      \"confidence\": 0.80\n    }\n  ],\n  \"background\": {\n    \"description\": \"Left black panel with yellow border and bold text; subtle vignette/white fade around subject on right\",\n    \"clutter_level\": \"low\"\n  },\n  \"colors\": {\n    \"dominant\": [\n      {\n        \"hex\": \"#000000\",\n        \"pct\": 0.45\n      },\n      {\n        \"hex\": \"#FFFFFF\",\n        \"pct\": 0.35\n      },\n      {\n        \"hex\": \"#FFD400\",\n        \"pct\": 0.20\n      }\n    ]\n  },\n  \"composition\": {\n    \"focal_point\": \"Close-up face on right and bold yellow \\\"ONLY THING\\\" text on left\"\n  },\n  \"effects\": {\n    \"text_outline\": true,\n    \"glow\": true\n  },\n  \"emotional_appeal\": {\n    \"emotion\": \"urgency/curiosity\",\n    \"score\": 0.92\n  },\n  \"summary\": \"Close-up face plus bold yellow 'ONLY THING' creates urgency and curiosity; brief highlighted phrase signals essential advice; Q&A tag adds credibility.\"\n}",
+                "refusal": null,
+                "annotations": []
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 1888,
+            "completion_tokens": 1827,
+            "total_tokens": 3715,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "audio_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 1216,
+              "audio_tokens": 0,
+              "accepted_prediction_tokens": 0,
+              "rejected_prediction_tokens": 0
+            }
+          },
+          "service_tier": "default",
+          "system_fingerprint": null
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Thumbnail URL Variable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Thumbnail URL Variable": {
+      "main": [
+        [
+          {
+            "node": "Open AI gpt-5-mini image analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open AI gpt-5-mini image analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse response from ai into good JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b28d3b54-597f-405f-bfda-22064e431f36",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd420091dfeedafcd8a76d623379315d1b49bc4f1df12c35325737e7bebf572a"
+  },
+  "id": "fxLTWe0RkYNKc5rg",
+  "tags": [
+    {
+      "updatedAt": "2025-10-03T15:49:47.082Z",
+      "createdAt": "2025-10-03T15:49:47.082Z",
+      "id": "hdu3DnMCqf2A6C3w",
+      "name": "YouTube"
+    }
+  ]
+}
